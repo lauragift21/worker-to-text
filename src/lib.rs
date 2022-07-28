@@ -15,7 +15,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             if let Some(text) = req.url()?.query() {
                 handle_slash(text.into()).await
             } else {
-                handle_slash("What's up Cloudflare".into()).await
+                handle_slash("Hello Worker!".into()).await
             }
         })
         .run(req, env)
@@ -23,7 +23,10 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 }
 
 async fn handle_slash(text: String) -> Result<Response> {
-    let renderer = TextRenderer::default();
+    // let renderer = TextRenderer::default();
+
+    let renderer = TextRenderer::try_new_with_ttf_font_data(include_bytes!("../assets/Inter-Bold.ttf"))
+    .expect("Example font is definitely loadable");
 
     let text = if text.len() > 128 {
         "Nope".into()
@@ -33,7 +36,9 @@ async fn handle_slash(text: String) -> Result<Response> {
 
     let text = urlencoding::decode(&text).map_err(|_| worker::Error::BadEncoding)?;
 
-    let text_png: TextPng = renderer.render_text_to_png_data(text.replace("+", " "), 64, "red").unwrap();
+    // TODO: Add line break when text is over a certain word count.
+
+    let text_png: TextPng = renderer.render_text_to_png_data(text.replace("+", " "), 60, "003682").unwrap();
 
     let mut headers = Headers::new();
     headers.set("content-type", "image/png")?;
